@@ -1,39 +1,41 @@
-var pages = Application('Pages');  
-pages.activate();
+var pages = Application('Pages');     
+pages.activate(); 
 pages.includeStandardAdditions = true;  
 
 var doc = pages.documents[0]();
-var tmpPath = pages.pathTo("temporary items").toString();
-var docString = doc.bodyText(); 
+var tmpPath = pages.pathTo("temporary items").toString(); 
+var docString = doc.bodyText.words().join('\n');
+	
+	
 var docPath = doc.file();
 var compare = pages.chooseFile({withPrompt: "Please select a document to compare:"})
-var doc2 = pages.open(compare);
+var doc2 = pages.open(compare);   
 var tmpout= Path( tmpPath + '/cmp-output.txt').toString();
 
-var re =  /^(.*?)\/([^\/]+).pages$/;
+var re =  /^(.*?)\/([^\/]+).pages$/; 
 var result;
 var newPath= tmpPath + '/BL-'  
 if (result = (docPath.toString()).match(re)){
 	newPath +=  result[2];
 	if (result = (compare.toString()).match(re)){
-		newPath += '-' + result[2];
+		newPath += '-' + result[2]; 
 		}
-}
+}  
 newPath +=".pages";
-console.log("New Filename: " + newPath);
-
+console.log("New Filename: " + newPath); 
 
 var shellscript = `#!/bin/bash
 OUTFN=${tmpout}  
 FNL=${tmpPath.toString()}/fn-lines.txt  
 CPL=${tmpPath.toString()}/cmp-lines.txt
+
+
 cd ${tmpPath.toString()}
-cat <<***EOL**** | perl -pe 's/[[:space:]]+/\n/igs' |perl -pe "s/\(\\/|\\(|-|\\xe2\\x80\\x94|\\d\\xe2\\x80\\x99\)/\\n/igs" | perl -pe "s/[^A-Za-z0-9\\n]//igs" | sed -E '/^$/d'  > $FNL
+cat <<***EOL**** > $FNL  
 ${docString} 
 ***EOL****
-
-cat << ***EOL1****| perl -pe 's/[[:space:]]+/\n/igs' |perl -pe "s/\(\\/|\\(|-|\\xe2\\x80\\x94|\\d\\xe2\\x80\\x99\)/\\n/igs" | perl -pe "s/[^A-Za-z0-9\\n]//igs" | sed -E '/^$/d'  > $CPL
-${doc2.bodyText()}
+cat << ***EOL1****  > $CPL
+${doc2.bodyText.words().join('\n')}
 ***EOL1****
 
 diff $FNL $CPL -e | perl -pe "s/^(\\d+(,\\d+)?[adc])\\$/<RECORD>\\$1/gi" | sed -E '/^.$/d' |tr "\\n" " " | sed -E "s/<RECORD>/\\n/g" | sed -E '/^$/d'> $OUTFN
@@ -48,7 +50,6 @@ doc2=pages.open(newPath);
 var diffOut = app.read(Path(tmpout),{ usingDelimiter: "\n"}); 
 console.log("\n\n----------\n" + diffOut.join("\n") + "\n\n----------\n");
 
-//pages.displayDialog('stopping, a moment in time')
 // https://discussions.apple.com/thread/8308160
 var paraIndex = [] // the number of words in each paragraph
 var i = 0;
@@ -56,7 +57,7 @@ var i = 0;
 //.save("BL-" + doc.name);
 var acc = 0; 
 
- 
+console.log('Document length:' + doc2.bodyText.words.length);
 const red = [65535,0,0]; 
 const green = [0,65535,0];
 var z =0;
@@ -67,7 +68,7 @@ diffOut.forEach(function(act){
 		var e = Number(result[3]);
 		if (! Number.isFinite(e)){
 			e = s+1;
-			}	
+			}	 
         var cmd = result[4];
         var txt= result[5];
 		console.log("match -- " + act + ":" + s + "," + e + cmd); 
@@ -79,13 +80,13 @@ diffOut.forEach(function(act){
                 for (var k = s; k<e; k++) {					
                     doc2.bodyText.words[k].color = green;
                 }
-				s=e;
-				
+				s=e-1;
                 // no break becasue we are going to fall through to add code
                 if ('d' == cmd){ break; }
-            case 'a':
+            case 'a':				
                 //https://discussions.apple.com/thread/4007471				
-				doc2.bodyText.words[s] = 'green ' + doc2.bodyText.words[s]()	
+				doc2.bodyText.words[s] =  doc2.bodyText.words[s]()	+ ' red';
+				s++;
 				doc2.bodyText.words[s].color = red;
 				doc2.bodyText.words[s] = txt
                 break;
@@ -101,4 +102,4 @@ FNL=${tmpPath.toString()}/fn-lines.txt
 CPL=${tmpPath.toString()}/cmp-lines.txt
 rm $OUTFN $FNL $CPL
 `
-//app.doShellScript(shellscript);
+app.doShellScript(shellscript);
