@@ -73,7 +73,7 @@ diffOut.forEach(function(act){
 			}	 
         var cmd = result[4];
         var txt= result[5];
-		console.log("match -- " + act + ":" + s + "," + e + cmd); 
+	console.log("match -- " + act + ":" + s + "," + e + cmd); 
         var p = 0;
 	 
         switch(cmd){
