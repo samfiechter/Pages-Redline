@@ -36,10 +36,10 @@ ${doc2.bodyText.words().join('\n')}
 ***EOL1****
 function diffFilter() {
 #perl -pe "s/^(\\d+(,\\d+)?[adc])\\$/<RECORD>\\$1/gm" | \\ 			mark the start of each command
-#sed -E "/^.$/d" | \\ 												delete the end of command marker
-#tr "\\n" " " | \\  												change all newlines to spaces
-#perl -pe "s/<RECORD>/\\n/gm" | \\ 									put a newline before each command
-#sed -E '/^$/d' 													delete blank lines.
+#sed -E "/^.$/d" | \\ 								delete the end of command marker
+#tr "\\n" " " | \\  								change all newlines to spaces
+#perl -pe "s/<RECORD>/\\n/gm" | \\ 						put a newline before each command
+#sed -E '/^$/d' 								delete blank lines.
 	perl -pe "s/^(\\d+(,\\d+)?[adc])\\$/<RECORD>\\$1/gm" | \\
 	sed -E "/^.$/d" | \\
 	tr "\\n" " " | \\
