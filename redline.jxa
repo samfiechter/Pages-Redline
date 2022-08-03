@@ -1,108 +1,110 @@
-var pages = Application('Pages');     
-pages.activate(); 
-pages.includeStandardAdditions = true;  
+(function () {
+    var pages = Application('Pages');
+    pages.activate();
+    pages.includeStandardAdditions = true;
 
-var doc = pages.documents[0]();
-var tmpPath = pages.pathTo("temporary items").toString(); 
-var docString = doc.bodyText.words().join('\n'); 	
-var docPath = doc.file();
+    var doc = pages.documents[0]();
+    var tmpPath = pages.pathTo("temporary items").toString();
+    var docString = doc.bodyText.words().join('\n');
+    var docPath = doc.file();
 
-var compare = pages.chooseFile({withPrompt: "Please select a document to compare:"})
-var doc2 = pages.open(compare);   
-var tmpout= Path( tmpPath + '/cmp-output.txt').toString();
+    var compare = pages.chooseFile({withPrompt: "Please select a document to compare:"})
+    var doc2 = pages.open(compare);
+    var tmpout= Path( tmpPath + '/cmp-output.txt').toString();
 
-var re =  /^(.*?)\/([^\/]+).pages$/;   //Get the filename from path
-var result;
-var newPath= tmpPath + '/BL-'  
-if (result = (docPath.toString()).match(re)){
-	newPath +=  result[2];
-}
-if (result = (compare.toString()).match(re)){
-	newPath += '-' + result[2]; 
-}
-newPath +=".pages";
-console.log("New Filename: " + newPath); 
+    var re =  /^(.*?)\/([^\/]+).pages$/;   //Get the filename from path
+    var result;
+    var newPath= tmpPath + '/BL-'
+    if (result = (docPath.toString()).match(re)){
+        newPath +=  result[2];
+    }
+    if (result = (compare.toString()).match(re)){
+        newPath += '-' + result[2];
+    }
+    newPath +=".pages";
+    console.log("New Filename: " + newPath);
 
-var shellscript = `#!/bin/bash
-OUTFN=${tmpout}  
-FNL=${tmpPath.toString()}/fn-lines.txt  
+    var shellscript = `#!/bin/bash
+OUTFN=${tmpout}
+FNL=${tmpPath.toString()}/fn-lines.txt
 CPL=${tmpPath.toString()}/cmp-lines.txt
 cd ${tmpPath.toString()}
-cat <<***EOL**** > $FNL  
-${docString} 
+cat <<***EOL**** > $FNL
+${docString}
 ***EOL****
 cat << ***EOL1****  > $CPL
 ${doc2.bodyText.words().join('\n')}
 ***EOL1****
 function diffFilter() {
-#-------------------------------------------------------------------------------COMMENTS FOR LINES BELOW
-#perl -pe "s/^(\\d+(,\\d+)?[adc])\\$/<RECORD>\\$1/gm" | \\ 			mark the start of each command
-#sed -E "/^.$/d" | \\ 								delete the end of command marker
-#tr "\\n" " " | \\  								change all newlines to spaces
-#perl -pe "s/<RECORD>/\\n/gm" | \\ 						put a newline before each command
-#sed -E '/^$/d' 								delete blank lines.
-#-------------------------------------------------------------------------------------------------------------------
-	perl -pe "s/^(\\d+(,\\d+)?[adc])\\$/<RECORD>\\$1/gm" | \\
-	sed -E "/^.$/d" | \\
-	tr "\\n" " " | \\
-	perl -pe "s/<RECORD>/\\n/gm" | \\
-	sed -E '/^$/d'
+#-------------------------------------------------------------------------------DESCRIPTION OF LINES BELOW
+#perl -pe "s/^(\\d+(,\\d+)?[adc])\\$/<RECORD>\\$1/gm" | \\                      mark the start of each command
+#sed -E "/^.$/d" | \\                                                           delete the end of command marker
+#tr "\\n" " " | \\                                                              change all newlines to spaces
+#perl -pe "s/<RECORD>/\\n/gm" | \\                                              put a newline before each command
+#sed -E '/^$/d'                                                                 delete blank lines.
+#-------------------------------------------------------------------------------VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVvv
+        perl -pe "s/^(\\d+(,\\d+)?[adc])\\$/<RECORD>\\$1/gm" | \\
+        sed -E "/^.$/d" | \\
+        tr "\\n" " " | \\
+        perl -pe "s/<RECORD>/\\n/gm" | \\
+        sed -E '/^$/d'
 }
 diff $FNL $CPL -e | diffFilter > $OUTFN
 `;
-const app = Application.currentApplication();  //for some reason you need to do shell script with currentapp
-app.includeStandardAdditions = true
-app.doShellScript(shellscript); 
+    const app = Application.currentApplication();  //for some reason you need to do shell script with currentapp
+    app.includeStandardAdditions = true
+    app.doShellScript(shellscript);
 
-var diffOut = app.read(Path(tmpout),{ usingDelimiter: "\n"}); 
-console.log("\n\n----------\n" + diffOut.join("\n") + "\n\n----------\n");
+    var diffOut = app.read(Path(tmpout),{ usingDelimiter: "\n"});
+    console.log("\n\n----------\n" + diffOut.join("\n") + "\n\n----------\n");
 
-pages.close(doc2);
-pages.save(doc, {in: Path(newPath)});
-doc2=pages.open(newPath);
+    pages.close(doc2);
+    pages.save(doc, {in: Path(newPath)});
+    doc2=pages.open(newPath);
 
-var paraIndex = [] // the number of words in each paragraph
-const red = [65535,0,0]; 
-const green = [0,65535,0];
+    var paraIndex = [] // the number of words in each paragraph
+    const red = [65535,0,0];
+    const green = [0,65535,0];
 
-diffOut.forEach(function(act){
-    re = /(\d+)(,(\d+))?([a|c|d]) ?(.*?)$/i;
-    if (result = act.match(re)){		
-        var s = result[1] - 1;	
-		var e = Number(result[3]);
-		if (! Number.isFinite(e)){
-			e = s+1;
-			}	 
-        var cmd = result[4];
-        var txt= result[5];
-	console.log("match -- " + act + ":" + s + "," + e + cmd); 
-        var p = 0;
-	 
-        switch(cmd){
+    diffOut.forEach(function(act){
+        re = /(\d+)(,(\d+))?([a|c|d]) ?(.*?)$/i;
+        if (result = act.match(re)){
+            var s = result[1] - 1;
+            var e = Number(result[3]);
+            if (! Number.isFinite(e)){
+                e = s+1;
+            }
+            var cmd = result[4];
+            var txt= result[5];
+            console.log("match -- " + act + ":" + s + "," + e + cmd);
+            var p = 0;
+
+            switch(cmd){
             case 'c':
             case 'd':
-                for (var k = s; k<e; k++) {					
+                for (var k = s; k<e; k++) {
                     doc2.bodyText.words[k].color = green;
                 }
-				s=e-1;
+                s=e-1;
                 // no break becasue we are going to fall through to add code
                 if ('d' == cmd){ break; }
-            case 'a':				             
-				doc2.bodyText.words[s] =  doc2.bodyText.words[s]()	+ ' red';
-				s++;
-				doc2.bodyText.words[s].color = red;
-				doc2.bodyText.words[s] = txt
+            case 'a':
+                doc2.bodyText.words[s] =  doc2.bodyText.words[s]()      + ' red';
+                s++;
+                doc2.bodyText.words[s].color = red;
+                doc2.bodyText.words[s] = txt
                 break;
             }
-    } else {
-		console.log("no match --" + act);
-	}
-});
-pages.save(doc2);
-shellscript = `#!/bin/bash
+        } else {
+            console.log("no match --" + act);
+        }
+    });
+    pages.save(doc2);
+    shellscript = `#!/bin/bash
 OUTFN=${tmpout}
 FNL=${tmpPath.toString()}/fn-lines.txt
 CPL=${tmpPath.toString()}/cmp-lines.txt
 rm $OUTFN $FNL $CPL
 `
-app.doShellScript(shellscript);
+    app.doShellScript(shellscript);
+})();
